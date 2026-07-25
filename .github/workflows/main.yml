@@ -23,4 +23,4 @@ jobs:
     - name: Restore NuGet packages
       run: nuget restore AutomationDesigner.sln
     - name: Build AutomationDesigner
-      run: msbuild AutomationDesigner.sln /p:Configuration=Release
+      run: msbuild AutomationDesigner.sln /p:Configuration=Release /p:SignManifests=false
