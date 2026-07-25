@@ -22,5 +22,17 @@ jobs:
       uses: microsoft/setup-msbuild@v2
     - name: Restore NuGet packages
       run: nuget restore AutomationDesigner.sln
+    - name: Find VSTO OfficeTools
+      shell: powershell
+      run: |
+        Write-Host "=== Visual Studio directories ==="
+        Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -Directory -Recurse -ErrorAction SilentlyContinue |
+          Where-Object { $_.Name -eq "OfficeTools" } |
+          Select-Object -ExpandProperty FullName
+
+        Write-Host "=== VSTO targets files ==="
+        Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -File -Recurse -Filter "Microsoft.VisualStudio.Tools.Office.targets" -ErrorAction SilentlyContinue |
+          Select-Object -ExpandProperty FullName
+
     - name: Build AutomationDesigner
       run: msbuild AutomationDesigner.sln /p:Configuration=Release /p:SignManifests=false
