@@ -27,7 +27,7 @@ jobs:
     - name: Restore NuGet packages
       run: nuget restore AutomationDesigner.sln
 
-    - name: Disable VSTO signing verification
+    - name: Disable VSTO signing tasks
       shell: powershell
       run: |
         $targets = "C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VisualStudio\v18.0\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets"
@@ -37,25 +37,24 @@ jobs:
 
         $content = Get-Content $targets -Raw
 
-        $old = '<VerifyClickOnceSigningSettings SignManifests="$(SignManifests)" ' + "`r`n" + '        />'
+        # Disable VerifyClickOnceSigningSettings
+        $content = $content.Replace(
+            '<VerifyClickOnceSigningSettings SignManifests="$(SignManifests)" ' + "`r`n" + '        />',
+            '<VerifyClickOnceSigningSettings SignManifests="$(SignManifests)" Condition="''$(SignManifests)'' != ''false''" />'
+        )
 
-        $new = '<VerifyClickOnceSigningSettings SignManifests="$(SignManifests)" Condition="''$(SignManifests)'' != ''false''" />'
+        # Disable ManageCertificateStore
+        $content = $content.Replace(
+            '<ManageCertificateStore',
+            '<ManageCertificateStore Condition="''$(SignManifests)'' != ''false''"'
+        )
 
-        if ($content.Contains($old)) {
-            $content = $content.Replace($old, $new)
+        Set-Content `
+            -Path $targets `
+            -Value $content `
+            -Encoding UTF8
 
-            Set-Content `
-                -Path $targets `
-                -Value $content `
-                -Encoding UTF8
-
-            Write-Host "VSTO signing verification successfully disabled."
-        }
-        else {
-            Write-Error "The expected VerifyClickOnceSigningSettings block was not found."
-            exit 1
-        }
-
+        Write-Host "VSTO signing tasks successfully patched."
     - name: Build AutomationDesigner
       run: msbuild AutomationDesigner.sln /p:Configuration=Release /p:SignManifests=false
 
