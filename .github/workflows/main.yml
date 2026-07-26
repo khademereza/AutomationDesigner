@@ -24,22 +24,18 @@ jobs:
     - name: Restore NuGet packages
       run: nuget restore AutomationDesigner.sln
 
-    - name: Disable VSTO signing verification
+    - name: Inspect VSTO target
       shell: powershell
       run: |
         $targets = "C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VisualStudio\v18.0\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets"
 
-        Write-Host "Patching: $targets"
+        Write-Host "=== Lines 145 to 180 ==="
 
-        $content = Get-Content $targets -Raw
+        $lines = Get-Content $targets
 
-        $content = $content -replace `
-          '<Target Name="VerifyClickOnceSigningSettings"', `
-          '<Target Name="VerifyClickOnceSigningSettings" Condition="''$(SignManifests)'' != ''false''"'
-
-        Set-Content $targets $content -Encoding UTF8
-
-        Write-Host "VSTO signing verification patched."
+        for ($i = 144; $i -lt 180; $i++) {
+          Write-Host ("{0}: {1}" -f ($i + 1), $lines[$i])
+        }
 
     - name: Build AutomationDesigner
       run: msbuild AutomationDesigner.sln /p:Configuration=Release /p:SignManifests=false
