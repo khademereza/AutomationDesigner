@@ -37,17 +37,9 @@ jobs:
 
         $content = Get-Content $targets -Raw
 
-        $old = @"
-        <VerifyClickOnceSigningSettings SignManifests="$(SignManifests)" 
-        />
-        "@
+        $old = '<VerifyClickOnceSigningSettings SignManifests="$(SignManifests)" ' + "`r`n" + '        />'
 
-        $new = @"
-        <VerifyClickOnceSigningSettings
-            SignManifests="$(SignManifests)"
-            Condition="'$(SignManifests)' != 'false'"
-        />
-        "@
+        $new = '<VerifyClickOnceSigningSettings SignManifests="$(SignManifests)" Condition="''$(SignManifests)'' != ''false''" />'
 
         if ($content.Contains($old)) {
             $content = $content.Replace($old, $new)
