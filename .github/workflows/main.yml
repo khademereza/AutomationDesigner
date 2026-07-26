@@ -20,19 +20,26 @@ jobs:
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
+
     - name: Restore NuGet packages
       run: nuget restore AutomationDesigner.sln
-    - name: Find VSTO OfficeTools
+
+    - name: Disable VSTO signing verification
       shell: powershell
       run: |
-        Write-Host "=== Visual Studio directories ==="
-        Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -Directory -Recurse -ErrorAction SilentlyContinue |
-          Where-Object { $_.Name -eq "OfficeTools" } |
-          Select-Object -ExpandProperty FullName
+        $targets = "C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Microsoft\VisualStudio\v18.0\OfficeTools\Microsoft.VisualStudio.Tools.Office.targets"
 
-        Write-Host "=== VSTO targets files ==="
-        Get-ChildItem "C:\Program Files\Microsoft Visual Studio" -File -Recurse -Filter "Microsoft.VisualStudio.Tools.Office.targets" -ErrorAction SilentlyContinue |
-          Select-Object -ExpandProperty FullName
+        Write-Host "Patching: $targets"
+
+        $content = Get-Content $targets -Raw
+
+        $content = $content -replace `
+          '<Target Name="VerifyClickOnceSigningSettings"', `
+          '<Target Name="VerifyClickOnceSigningSettings" Condition="''$(SignManifests)'' != ''false''"'
+
+        Set-Content $targets $content -Encoding UTF8
+
+        Write-Host "VSTO signing verification patched."
 
     - name: Build AutomationDesigner
       run: msbuild AutomationDesigner.sln /p:Configuration=Release /p:SignManifests=false
